@@ -1,0 +1,14 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.vercel/
+coverage/
+test-results/
+*.log
+.DS_Store
+data/
+*.sqlite*
+private/
+backups/
+initial-admin.txt

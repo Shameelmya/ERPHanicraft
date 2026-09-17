@@ -1,0 +1,6 @@
+{
+  "name": "hanicraft-erp", "version": "1.0.0", "private": true, "type": "module",
+  "description": "Hanicraft local ERP: stock-centred fulfilment, staff access and accounting workflows",
+  "engines": { "node": ">=24.15.0" },
+  "scripts": {"dev":"node local/server.mjs","start":"node local/server.mjs","build":"node scripts/build-local.mjs","test":"node --test tests/local.test.mjs tests/revisions.test.mjs","setup":"node scripts/setup.mjs"}
+}
