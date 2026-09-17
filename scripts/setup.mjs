@@ -1,0 +1,10 @@
+import {randomBytes} from 'node:crypto';
+import {writeFileSync,mkdirSync} from 'node:fs';
+import {resolve} from 'node:path';
+import {openStore,hashPassword} from '../local/store.mjs';
+import {initialiseClean} from '../local/catalogue.mjs';
+const s=openStore(process.env.HANICRAFT_DB||resolve('data/hanicraft-live.sqlite'));
+if(s.list('employees').length)throw Error('Accounts already exist. Use MD/GM People & access.');
+initialiseClean(s);const email=process.env.HANICRAFT_ADMIN_EMAIL||'md@hanicraft.local',password=process.env.HANICRAFT_ADMIN_PASSWORD||randomBytes(24).toString('base64url');if(password.length<16)throw Error('Initial password requires at least 16 characters.');
+s.put('employees',{id:'md',name:'Managing Director',title:'Managing Director',role:'MD',department:'Management',active:true,email,passwordHash:hashPassword(password),phone:'',whatsapp:'',photoUrl:'',grants:[],skills:[],joined:new Date().toISOString().slice(0,10),avatarColor:'teal'});
+mkdirSync('data',{recursive:true});writeFileSync('data/initial-admin.txt',`Local administrator\nEmail: ${email}\nPassword: ${password}\nChange this password after your first login. Keep this file private.\n`,{flag:'wx'});s.close();console.log('Administrator created. Credentials saved privately in data/initial-admin.txt.');

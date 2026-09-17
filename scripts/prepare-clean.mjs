@@ -1,0 +1,13 @@
+import {DatabaseSync} from 'node:sqlite';
+import {readFileSync,existsSync,mkdirSync,writeFileSync} from 'node:fs';
+import {resolve} from 'node:path';
+import {openStore} from '../local/store.mjs';
+import {initialiseClean,importCatalogue} from '../local/catalogue.mjs';
+const [oldPath,csvPath,newPath]=process.argv.slice(2);
+if(!oldPath||!csvPath||!newPath)throw Error('Usage: node scripts/prepare-clean.mjs old.sqlite stock.csv new.sqlite');
+if(existsSync(newPath))throw Error('Destination exists; refusing to reset an existing live database.');
+const old=new DatabaseSync(oldPath,{readOnly:true});const employees=old.prepare("SELECT data FROM records WHERE kind='employees'").all().map(r=>JSON.parse(r.data));
+if(!employees.some(e=>e.role==='MD'&&e.active))throw Error('An active MD account is required.');
+old.close();const s=openStore(newPath);initialiseClean(s);s.transaction(()=>{for(const w of employees)s.put('employees',{...w,phone:w.phone||'',whatsapp:w.whatsapp||'',photoUrl:w.photoUrl||''});});
+const source=importCatalogue(s,readFileSync(csvPath,'utf8'));s.event({actorId:'system',actorName:'Local migration',action:'clean_workspace_initialised',entityKind:'settings',entityId:'company',retainedAccounts:employees.length,previousDatabase:resolve(oldPath),sourceHash:source.sha256});
+const summary={accounts:employees.length,catalogueProducts:s.list('products').length,sourceRows:source.itemCount,duplicateCodes:source.duplicateCodes,emptyBusinessRecords:['customers','orders','jobs','tasks','payments','journals'].every(k=>s.list(k).length===0)};s.close();console.log(JSON.stringify(summary,null,2));
